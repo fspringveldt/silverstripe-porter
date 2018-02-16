@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Standard module phpunit configuration.
+Requires PHPUnit ^5.7
+-->
+<phpunit bootstrap="vendor/autoload.php" colors="true">
+	<testsuite name="Default">
+		<directory>tests/PHP</directory>
+    </testsuite>
+    <groups>
+        <exclude>
+            <group>sanitychecks</group>
+        </exclude>
+    </groups>
+</phpunit>
