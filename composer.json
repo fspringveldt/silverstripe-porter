@@ -1,0 +1,20 @@
+{
+  "name": "silverstripe/porter",
+  "description": "Adds useful cli commands for the SilverStripe framework",
+  "authors": [
+    {
+      "name": "Franco Springveldt",
+      "email": "franco@silverstripe.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "SilverStripe\\Porter\\": "src/"
+    }
+  },
+  "require": {
+    "symfony/console": "~3.0|~4.0",
+    "symfony/filesystem": "~3.0|~4.0",
+    "symfony/process": "~3.0|~4.0"
+  }
+}
