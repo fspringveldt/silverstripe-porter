@@ -13,9 +13,8 @@
     }
   },
   "require": {
-    "symfony/console": "~3.0|~4.0",
-    "symfony/filesystem": "~3.0|~4.0",
-    "symfony/process": "~3.0|~4.0"
+    "symfony/filesystem": "~3.0",
+    "symfony/process": "~3.0"
   },
   "minimum-stability": "dev",
   "prefer-stable": true
