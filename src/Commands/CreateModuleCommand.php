@@ -1,6 +1,6 @@
 <?php
 
-namespace SilverStripe\Porter;
+namespace SilverStripe\Porter\Commands;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Console\Command\Command;
