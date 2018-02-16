@@ -19,6 +19,14 @@ use Symfony\Component\Yaml\Exception\RuntimeException;
  */
 class ModuleCommand extends Command
 {
+    const ARGUMENTS_MODULE_NAME = 'module-name';
+    const ARGUMENTS_MODULE_NAMESPACE = 'module-namespace';
+    const ARGUMENTS_MODULE_PATH = 'module-path';
+    const OPTIONS_SS3 = 'ss3';
+    const OPTIONS_VENDOR = 'isVendor';
+    const OPTIONS_TRAVIS_CI = 'withTravisCI';
+    const OPTIONS_CIRCLE_CI = 'withCircleCI';
+
     /**
      * @var string
      */
@@ -50,24 +58,31 @@ class ModuleCommand extends Command
     private $frameworkVersion = 'ss4';
 
     /**
+     * @var string
+     */
+    private $separator = DIRECTORY_SEPARATOR;
+
+    /**
      * Configures the command
      */
     protected function configure()
     {
         $this->setName('module')
-            ->setDescription('Sets up a new SilverStripe module skeleton at a path you specify (defaults to your current projects BASE_PATH)')
-            ->addArgument('module-name', InputArgument::REQUIRED)
-            ->addArgument('module-namespace', InputArgument::REQUIRED)
-            ->addArgument('module-path', InputArgument::OPTIONAL)
-            ->addArgument('ss-version', InputArgument::OPTIONAL)
+            ->setDescription('Sets up a new SilverStripe module skeleton at a'
+                . ' path you specify (defaults to your current projects BASE_PATH)')
+            ->addArgument(self::ARGUMENTS_MODULE_NAME, InputArgument::REQUIRED)
+            ->addArgument(self::ARGUMENTS_MODULE_NAMESPACE, InputArgument::REQUIRED)
+            ->addArgument(self::ARGUMENTS_MODULE_PATH, InputArgument::OPTIONAL)
             ->addOption(
-                'isVendor',
+                self::OPTIONS_VENDOR,
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Installs as a vendor module',
                 true
             )
-            ->addOption('ss3', null, InputOption::VALUE_OPTIONAL);
+            ->addOption(self::OPTIONS_SS3, null, InputOption::VALUE_OPTIONAL)
+            ->addOption(self::OPTIONS_TRAVIS_CI, null, InputOption::VALUE_NONE)
+            ->addOption(self::OPTIONS_CIRCLE_CI, null, InputOption::VALUE_NONE);
     }
 
     /**
@@ -78,32 +93,74 @@ class ModuleCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->modulePath = $input->getArgument('module-path');
-        $this->moduleName = $input->getArgument('module-name');
-        $this->namespace = $input->getArgument('module-namespace');
+        $this->setArguments($input);
+        $this->copySkeleton();
+        $this->setupComposerJson();
+        $this->copyOptions($input);
+    }
+
+    /**
+     * Sets the argument values to their respective properties
+     * @param InputInterface $input
+     * @throws RuntimeException
+     */
+    protected function setArguments(InputInterface $input)
+    {
+        $this->modulePath = $input->getArgument(self::ARGUMENTS_MODULE_PATH);
+        $this->moduleName = $input->getArgument(self::ARGUMENTS_MODULE_NAME);
+        $this->namespace = $input->getArgument(self::ARGUMENTS_MODULE_NAMESPACE);
         $this->moduleType = 'silverstripe-module';
-
-        if ($input->getOption('isVendor')) {
-            $this->moduleType = 'silverstripe-vendormodule';
-        }
-
-        if ($ss3 = $input->getOption('ss3')) {
-            $this->frameworkVersion = 'ss3';
-        }
-
         if (stripos($this->moduleName, DIRECTORY_SEPARATOR) === false) {
             throw new RuntimeException('Invalid module name given. Use the format module/name');
         }
-
-
-        $this->copySkeleton();
-        $this->setupComposerJson();
     }
 
+    /**
+     * Checks for and actions all actions
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     */
+    protected function copyOptions(InputInterface $input)
+    {
+        $source = $this->getSourcePath('options');
+        $target = $this->getTargetPath();
+        $uri = function ($folder, $endPoint) {
+            return "{$folder}{$this->separator}{$endPoint}";
+        };
+        if ($input->getOption(self::OPTIONS_VENDOR)) {
+            $this->moduleType = 'silverstripe-vendormodule';
+        }
+
+        if ($ss3 = $input->getOption(self::OPTIONS_SS3)) {
+            $this->frameworkVersion = 'ss3';
+        }
+
+        if ($withTravis = $input->getOption(self::OPTIONS_TRAVIS_CI)) {
+            $file = '.travis.yml';
+            $this->getFilesystem()->copy(
+                $uri($source, $file),
+                $uri($target, $file)
+            );
+        }
+
+        if ($withCircleCI = $input->getOption(self::OPTIONS_CIRCLE_CI)) {
+            $folder = '.circleci';
+            $this->getFilesystem()->mirror(
+                $uri($source, $folder),
+                $uri($target, $folder)
+            );
+        }
+    }
+
+    /**
+     * Copies the skeleton to the root directory
+     */
     protected function copySkeleton()
     {
-        $source = $this->getSourcePath();
-        $this->getFilesystem()->mirror($source, $this->getTargetPath());
+        $this->getFilesystem()->mirror(
+            $this->getSourcePath(),
+            $this->getTargetPath()
+        );
     }
 
     /**
@@ -142,14 +199,14 @@ class ModuleCommand extends Command
     }
 
     /**
-     * Returns the path to the module skeleton
+     * Returns the path to the given sub-dir. Defaults to assets skeleton
+     * @param string $subDir
      * @return string
      */
-    protected function getSourcePath()
+    protected function getSourcePath($subDir = 'assets')
     {
-        $separator = DIRECTORY_SEPARATOR;
         $porterDir = __DIR__;
-        return "{$porterDir}{$separator}assets{$separator}{$this->frameworkVersion}-skeleton";
+        return "{$porterDir}{$this->separator}{$subDir}{$this->separator}{$this->frameworkVersion}-skeleton";
     }
 
     /**
@@ -159,6 +216,6 @@ class ModuleCommand extends Command
     protected function getTargetPath()
     {
         $folderName = substr($this->moduleName, stripos($this->moduleName, DIRECTORY_SEPARATOR) + 1);
-        return BASE_PATH . DIRECTORY_SEPARATOR . $folderName;
+        return BASE_PATH . $this->separator . $folderName;
     }
 }
