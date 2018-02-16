@@ -1,6 +1,6 @@
 ## SilverStripe Porter
 
-[![Build Status](https://api.travis-ci.org/silverstripe/porter.svg?branch=master)](https://travis-ci.org/silverstripe/porter)
+[![Build Status](https://travis-ci.org/fspringveldt/silverstripe-porter.svg?branch=master)](https://travis-ci.org/fspringveldt/silverstripe-porter)
 [![Total Downloads](https://poser.pugx.org/silverstripe/porter/downloads.svg)](https://packagist.org/packages/silverstripe/porter)
 
 SilverStripe Porter (think kitchen porter) seeks to automate several menial tasks for the SilverStripe framework via cli.
