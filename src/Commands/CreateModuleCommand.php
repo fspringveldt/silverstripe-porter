@@ -2,6 +2,7 @@
 
 namespace SilverStripe\Porter\Commands;
 
+use SilverStripe\Porter\Helpers\ValidationHelper;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
@@ -11,7 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Yaml\Exception\RuntimeException;
 
 /**
- * Class ModuleCommand
+ * Class CreateModuleCommand
  */
 class CreateModuleCommand extends Command
 {
@@ -85,7 +86,7 @@ class CreateModuleCommand extends Command
         $this->setArguments($input);
         $output->writeln(
             "Creating SilverStripe module named {$this->moduleName} "
-            . "at {$this->modulePath}"
+            . "at {$this->getModulePath()}"
         );
         $this->copySkeleton();
         $output->writeln(' - Skeleton copied');
@@ -103,20 +104,11 @@ class CreateModuleCommand extends Command
      */
     protected function setArguments(InputInterface $input)
     {
-        $this->modulePath = getcwd();
         $this->moduleName = $input->getArgument(self::ARGUMENTS_MODULE_NAME);
         $this->namespace = $input->getArgument(self::ARGUMENTS_MODULE_NAMESPACE);
 
-        if (in_array(substr_count($this->namespace, '\\'), [0, 1])) {
-            $message = "It seems your namespace is formed incorrectly.\n"
-                . "Possible examples are NameSpace\\\\ or NameSpace\\\\Folder\\\\\n"
-                . "[Double backslashes]";
-            throw new RuntimeException($message);
-        }
-
-        if (stripos($this->moduleName, DIRECTORY_SEPARATOR) === false) {
-            throw new RuntimeException('Invalid module name given. Use the format module/name');
-        }
+        ValidationHelper::validateNamespace($this->namespace);
+        ValidationHelper::validateModuleName($this->moduleName);
     }
 
     /**
@@ -220,6 +212,28 @@ class CreateModuleCommand extends Command
     protected function getTargetPath()
     {
         $folderName = substr($this->moduleName, stripos($this->moduleName, DIRECTORY_SEPARATOR) + 1);
-        return $this->modulePath . $this->separator . $folderName;
+        return $this->getModulePath() . $this->separator . $folderName;
+    }
+
+    /**
+     * Returns the module path. Defaults to use getcwd();
+     * @return string
+     */
+    public function getModulePath()
+    {
+        if (!$this->modulePath) {
+            $this->modulePath = getcwd();
+        }
+        return $this->modulePath;
+    }
+
+    /**
+     * @param string $modulePath
+     * @return CreateModuleCommand
+     */
+    public function setModulePath($modulePath)
+    {
+        $this->modulePath = $modulePath;
+        return $this;
     }
 }
