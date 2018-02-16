@@ -66,7 +66,8 @@ class ModuleCommand extends Command
                 InputOption::VALUE_REQUIRED,
                 'Installs as a vendor module',
                 true
-            );
+            )
+            ->addOption('ss3', null, InputOption::VALUE_OPTIONAL);
     }
 
     /**
@@ -84,6 +85,10 @@ class ModuleCommand extends Command
 
         if ($input->getOption('isVendor')) {
             $this->moduleType = 'silverstripe-vendormodule';
+        }
+
+        if ($ss3 = $input->getOption('ss3')) {
+            $this->frameworkVersion = 'ss3';
         }
 
         if (stripos($this->moduleName, DIRECTORY_SEPARATOR) === false) {
