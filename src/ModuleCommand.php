@@ -65,10 +65,9 @@ class ModuleCommand extends Command
     {
         $this->setName('create-module')
             ->setDescription('Sets up a new SilverStripe module skeleton at a'
-                . ' path you specify (defaults to your current projects BASE_PATH)')
+                . ' path you specify (defaults to using getcwd())')
             ->addArgument(self::ARGUMENTS_MODULE_NAME, InputArgument::REQUIRED)
             ->addArgument(self::ARGUMENTS_MODULE_NAMESPACE, InputArgument::REQUIRED)
-            ->addArgument(self::ARGUMENTS_MODULE_PATH, InputArgument::OPTIONAL)
             ->addOption(self::OPTIONS_NON_VENDOR, null, InputOption::VALUE_NONE)
             ->addOption(self::OPTIONS_SS3, null, InputOption::VALUE_NONE)
             ->addOption(self::OPTIONS_TRAVIS_CI, null, InputOption::VALUE_NONE)
@@ -84,9 +83,17 @@ class ModuleCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->setArguments($input);
+        $output->writeln(
+            "Creating SilverStripe module named {$this->moduleName} "
+            . "at {$this->modulePath}"
+        );
         $this->copySkeleton();
+        $output->writeln(' - Skeleton copied');
         $this->setupComposerJson();
+        $output->writeln(' - composer.json updated');
         $this->copyOptions($input);
+        $output->writeln(' - Options copied');
+        $output->writeln(' - Done');
     }
 
     /**
@@ -96,7 +103,7 @@ class ModuleCommand extends Command
      */
     protected function setArguments(InputInterface $input)
     {
-        $this->modulePath = $input->getArgument(self::ARGUMENTS_MODULE_PATH);
+        $this->modulePath = getcwd();
         $this->moduleName = $input->getArgument(self::ARGUMENTS_MODULE_NAME);
         $this->namespace = $input->getArgument(self::ARGUMENTS_MODULE_NAMESPACE);
         $this->moduleType = 'silverstripe-module';
@@ -214,6 +221,6 @@ class ModuleCommand extends Command
     protected function getTargetPath()
     {
         $folderName = substr($this->moduleName, stripos($this->moduleName, DIRECTORY_SEPARATOR) + 1);
-        return BASE_PATH . $this->separator . $folderName;
+        return $this->modulePath . $this->separator . $folderName;
     }
 }
