@@ -13,7 +13,7 @@ use Symfony\Component\Yaml\Exception\RuntimeException;
 /**
  * Class ModuleCommand
  */
-class ModuleCommand extends Command
+class CreateModuleCommand extends Command
 {
     const ARGUMENTS_MODULE_NAME = 'module-name';
     const ARGUMENTS_MODULE_NAMESPACE = 'module-namespace';
