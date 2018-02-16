@@ -67,7 +67,7 @@ class ModuleCommand extends Command
      */
     protected function configure()
     {
-        $this->setName('module')
+        $this->setName('create-module')
             ->setDescription('Sets up a new SilverStripe module skeleton at a'
                 . ' path you specify (defaults to your current projects BASE_PATH)')
             ->addArgument(self::ARGUMENTS_MODULE_NAME, InputArgument::REQUIRED)
