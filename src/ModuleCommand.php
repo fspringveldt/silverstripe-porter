@@ -2,16 +2,12 @@
 
 namespace SilverStripe\Porter;
 
-use GuzzleHttp\Client;
-use Symfony\Component\Console\Input\Input;
-use Symfony\Component\Process\Process;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use Symfony\Component\Yaml\Exception\RuntimeException;
 
 /**
@@ -23,7 +19,7 @@ class ModuleCommand extends Command
     const ARGUMENTS_MODULE_NAMESPACE = 'module-namespace';
     const ARGUMENTS_MODULE_PATH = 'module-path';
     const OPTIONS_SS3 = 'ss3';
-    const OPTIONS_VENDOR = 'isVendor';
+    const OPTIONS_NON_VENDOR = 'nonVendor';
     const OPTIONS_TRAVIS_CI = 'withTravisCI';
     const OPTIONS_CIRCLE_CI = 'withCircleCI';
 
@@ -40,7 +36,7 @@ class ModuleCommand extends Command
     /**
      * @var string
      */
-    private $moduleType;
+    private $moduleType = 'silverstripe-vendormodule';
 
     /**
      * @var string
@@ -73,14 +69,8 @@ class ModuleCommand extends Command
             ->addArgument(self::ARGUMENTS_MODULE_NAME, InputArgument::REQUIRED)
             ->addArgument(self::ARGUMENTS_MODULE_NAMESPACE, InputArgument::REQUIRED)
             ->addArgument(self::ARGUMENTS_MODULE_PATH, InputArgument::OPTIONAL)
-            ->addOption(
-                self::OPTIONS_VENDOR,
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Installs as a vendor module',
-                true
-            )
-            ->addOption(self::OPTIONS_SS3, null, InputOption::VALUE_OPTIONAL)
+            ->addOption(self::OPTIONS_NON_VENDOR, null, InputOption::VALUE_NONE)
+            ->addOption(self::OPTIONS_SS3, null, InputOption::VALUE_NONE)
             ->addOption(self::OPTIONS_TRAVIS_CI, null, InputOption::VALUE_NONE)
             ->addOption(self::OPTIONS_CIRCLE_CI, null, InputOption::VALUE_NONE);
     }
@@ -127,8 +117,8 @@ class ModuleCommand extends Command
         $uri = function ($folder, $endPoint) {
             return "{$folder}{$this->separator}{$endPoint}";
         };
-        if ($input->getOption(self::OPTIONS_VENDOR)) {
-            $this->moduleType = 'silverstripe-vendormodule';
+        if ($input->getOption(self::OPTIONS_NON_VENDOR)) {
+            $this->moduleType = 'silverstripe-module';
         }
 
         if ($ss3 = $input->getOption(self::OPTIONS_SS3)) {
