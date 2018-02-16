@@ -1,6 +1,14 @@
 {
   "name": "silverstripe/porter",
-  "description": "Adds useful cli commands for the SilverStripe framework",
+  "description": "Adds useful cli commands for the SilverStripe framework.",
+  "keywords": [
+    'module',
+    'create',
+    'cli',
+    'SilverStripe',
+    'create-module',
+    'porter'
+  ],
   "authors": [
     {
       "name": "Franco Springveldt",
