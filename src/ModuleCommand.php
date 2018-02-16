@@ -106,7 +106,6 @@ class ModuleCommand extends Command
         $this->modulePath = getcwd();
         $this->moduleName = $input->getArgument(self::ARGUMENTS_MODULE_NAME);
         $this->namespace = $input->getArgument(self::ARGUMENTS_MODULE_NAMESPACE);
-        $this->moduleType = 'silverstripe-module';
 
         if (in_array(substr_count($this->namespace, '\\'), [0, 1])) {
             $message = "It seems your namespace is formed incorrectly.\n"
