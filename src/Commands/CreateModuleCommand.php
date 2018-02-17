@@ -88,41 +88,22 @@ class CreateModuleCommand extends Command
             "Creating SilverStripe module named {$this->moduleName} "
             . "at {$this->getModulePath()}"
         );
+        $this->preCopyOptions($input);
         $this->copySkeleton();
         $output->writeln(' - Skeleton copied');
         $this->setupComposerJson();
         $output->writeln(' - composer.json updated');
-        $this->copyOptions($input);
+        $this->postCopyOptions($input);
         $output->writeln(' - Options copied');
         $output->writeln(' - Done');
     }
 
     /**
-     * Sets the argument values to their respective properties
+     * Applies any pre copy options
      * @param InputInterface $input
-     * @throws RuntimeException
      */
-    protected function setArguments(InputInterface $input)
+    protected function preCopyOptions(InputInterface $input)
     {
-        $this->moduleName = $input->getArgument(self::ARGUMENTS_MODULE_NAME);
-        $this->namespace = $input->getArgument(self::ARGUMENTS_MODULE_NAMESPACE);
-
-        ValidationHelper::validateModuleName($this->moduleName);
-        ValidationHelper::validateNamespace($this->namespace);
-    }
-
-    /**
-     * Checks for and actions all actions
-     * @param InputInterface $input
-     * @param OutputInterface $output
-     */
-    protected function copyOptions(InputInterface $input)
-    {
-        $source = $this->getSourcePath('options');
-        $target = $this->getTargetPath();
-        $uri = function ($folder, $endPoint) {
-            return "{$folder}{$this->separator}{$endPoint}";
-        };
         if ($input->getOption(self::OPTIONS_NON_VENDOR)) {
             $this->moduleType = 'silverstripe-module';
         }
@@ -130,6 +111,19 @@ class CreateModuleCommand extends Command
         if ($ss3 = $input->getOption(self::OPTIONS_SS3)) {
             $this->frameworkVersion = 'ss3';
         }
+    }
+
+    /**
+     * Applies any post copy options
+     * @param InputInterface $input
+     */
+    protected function postCopyOptions(InputInterface $input)
+    {
+        $source = $this->getSourcePath('options');
+        $target = $this->getTargetPath();
+        $uri = function ($folder, $endPoint) {
+            return "{$folder}{$this->separator}{$endPoint}";
+        };
 
         if ($withTravis = $input->getOption(self::OPTIONS_TRAVIS_CI)) {
             $file = '.travis.yml';
@@ -146,6 +140,20 @@ class CreateModuleCommand extends Command
                 $uri($target, $folder)
             );
         }
+    }
+
+    /**
+     * Sets the argument values to their respective properties
+     * @param InputInterface $input
+     * @throws RuntimeException
+     */
+    protected function setArguments(InputInterface $input)
+    {
+        $this->moduleName = $input->getArgument(self::ARGUMENTS_MODULE_NAME);
+        $this->namespace = $input->getArgument(self::ARGUMENTS_MODULE_NAMESPACE);
+
+        ValidationHelper::validateModuleName($this->moduleName);
+        ValidationHelper::validateNamespace($this->namespace);
     }
 
     /**
