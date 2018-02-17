@@ -1,6 +1,9 @@
 ## SilverStripe Porter
 
 [![Build Status](https://travis-ci.org/fspringveldt/silverstripe-porter.svg?branch=master)](https://travis-ci.org/fspringveldt/silverstripe-porter)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/fspringveldt/silverstripe-porter/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/fspringveldt/silverstripe-porter/?branch=master)
+[![Code coverage](https://codecov.io/gh/fspringveldt/silverstripe-porter/branch/master/graph/badge.svg)](https://codecov.io/gh/fspringveldt/silverstripe-porter)
+[![License](https://poser.pugx.org/silverstripe/porter/license)](https://packagist.org/packages/silverstripe/porter)
 [![Total Downloads](https://poser.pugx.org/silverstripe/porter/downloads.svg)](https://packagist.org/packages/silverstripe/porter)
 
 SilverStripe Porter (think kitchen porter) seeks to automate several menial tasks for the SilverStripe framework via cli.
