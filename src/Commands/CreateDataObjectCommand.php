@@ -22,6 +22,7 @@ class CreateDataObjectCommand extends Command
     const OPTIONS_HAS_ONE = 'withHasOne';
     const OPTIONS_HAS_MANY = 'withHasMany';
     const OPTIONS_MANY_MANY = 'withManyMany';
+    const OPTIONS_TRADITIONAL_ARRAY = 'withTraditionalArray';
 
     /**
      * @var string
@@ -54,6 +55,12 @@ class CreateDataObjectCommand extends Command
     private $separator = DIRECTORY_SEPARATOR;
 
     /**
+     * Whether or not to use traditional array syntax
+     * @var bool
+     */
+    private $useTraditionalArraySyntax = false;
+
+    /**
      * Configures the command
      */
     protected function configure()
@@ -66,7 +73,8 @@ class CreateDataObjectCommand extends Command
             ->addArgument(self::ARGUMENTS_NAMESPACE, InputArgument::REQUIRED)
             ->addOption(self::OPTIONS_HAS_ONE, null, InputOption::VALUE_NONE)
             ->addOption(self::OPTIONS_HAS_MANY, null, InputOption::VALUE_NONE)
-            ->addOption(self::OPTIONS_MANY_MANY, null, InputOption::VALUE_NONE);
+            ->addOption(self::OPTIONS_MANY_MANY, null, InputOption::VALUE_NONE)
+            ->addOption(self::OPTIONS_TRADITIONAL_ARRAY, null, InputOption::VALUE_NONE);
     }
 
     /**
@@ -82,12 +90,11 @@ class CreateDataObjectCommand extends Command
             "Creating SilverStripe DataObject named {$this->name} "
             . "at {$this->modulePath}"
         );
+        $this->preCopyOptions($input);
         $this->copySkeleton();
-        $output->writeln(' - Skeleton copied');
-        $this->setupComposerJson();
-        $output->writeln(' - composer.json updated');
-        $this->copyOptions($input);
-        $output->writeln(' - Options copied');
+        $output->writeln(' - Skeleton created');
+        $this->postCopyOptions($input);
+        $output->writeln(' - Options applied');
         $output->writeln(' - Done');
     }
 
@@ -107,11 +114,21 @@ class CreateDataObjectCommand extends Command
     }
 
     /**
+     * @param InputInterface $input
+     */
+    protected function preCopyOptions(InputInterface $input)
+    {
+        if ($input->getOption(self::OPTIONS_TRADITIONAL_ARRAY)) {
+            $this->useTraditionalArraySyntax = true;
+        }
+    }
+
+    /**
      * Checks for and actions all actions
      * @param InputInterface $input
      * @param OutputInterface $output
      */
-    protected function copyOptions(InputInterface $input)
+    protected function postCopyOptions(InputInterface $input)
     {
         $source = $this->getSourcePath('options');
         $target = $this->getTargetPath();
@@ -197,7 +214,7 @@ class CreateDataObjectCommand extends Command
     protected function getSourcePath($subDir = 'assets')
     {
         $porterDir = __DIR__;
-        return "{$porterDir}{$this->separator}{$subDir}{$this->separator}{$this->frameworkVersion}-skeleton";
+        return "{$porterDir}{$this->separator}{$subDir}{$this->separator}{$this->frameworkVersion}-dataobject";
     }
 
     /**
@@ -208,5 +225,23 @@ class CreateDataObjectCommand extends Command
     {
         $folderName = substr($this->name, stripos($this->name, DIRECTORY_SEPARATOR) + 1);
         return $this->modulePath . $this->separator . $folderName;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isTraditionalSyntax()
+    {
+        return $this->useTraditionalArraySyntax;
+    }
+
+    /**
+     * @param bool $traditionalSyntax
+     * @return CreateDataObjectCommand
+     */
+    public function setTraditionalSyntax($traditionalSyntax)
+    {
+        $this->useTraditionalArraySyntax = $traditionalSyntax;
+        return $this;
     }
 }
