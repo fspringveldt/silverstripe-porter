@@ -12,32 +12,26 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Yaml\Exception\RuntimeException;
 
 /**
- * Class CreateModuleCommand
+ * Class CreateDataObjectCommand
  */
-class CreateModuleCommand extends Command
+class CreateDataObjectCommand extends Command
 {
-    const ARGUMENTS_MODULE_NAME = 'module-name';
-    const ARGUMENTS_MODULE_NAMESPACE = 'module-namespace';
-    const ARGUMENTS_MODULE_PATH = 'module-path';
-    const OPTIONS_SS3 = 'ss3';
-    const OPTIONS_NON_VENDOR = 'nonVendor';
-    const OPTIONS_TRAVIS_CI = 'withTravisCI';
-    const OPTIONS_CIRCLE_CI = 'withCircleCI';
+    const ARGUMENTS_NAME = 'name';
+    const ARGUMENTS_NAMESPACE = 'namespace';
+    const ARGUMENTS_PATH = 'path';
+    const OPTIONS_HAS_ONE = 'withHasOne';
+    const OPTIONS_HAS_MANY = 'withHasMany';
+    const OPTIONS_MANY_MANY = 'withManyMany';
 
     /**
      * @var string
      */
-    private $moduleName;
+    private $name;
 
     /**
      * @var string
      */
     private $namespace;
-
-    /**
-     * @var string
-     */
-    private $moduleType = 'silverstripe-vendormodule';
 
     /**
      * @var string
@@ -64,15 +58,15 @@ class CreateModuleCommand extends Command
      */
     protected function configure()
     {
-        $this->setName('create-module')
-            ->setDescription('Sets up a new SilverStripe module skeleton at a'
-                . ' path you specify (defaults to using getcwd())')
-            ->addArgument(self::ARGUMENTS_MODULE_NAME, InputArgument::REQUIRED)
-            ->addArgument(self::ARGUMENTS_MODULE_NAMESPACE, InputArgument::REQUIRED)
-            ->addOption(self::OPTIONS_NON_VENDOR, null, InputOption::VALUE_NONE)
-            ->addOption(self::OPTIONS_SS3, null, InputOption::VALUE_NONE)
-            ->addOption(self::OPTIONS_TRAVIS_CI, null, InputOption::VALUE_NONE)
-            ->addOption(self::OPTIONS_CIRCLE_CI, null, InputOption::VALUE_NONE);
+        $this->setName('create-dataobject')
+            ->setDescription('Sets up a new SilverStripe dataobject skeleton at the'
+                . ' given path.')
+            ->addArgument(self::ARGUMENTS_NAME, InputArgument::REQUIRED)
+            ->addArgument(self::ARGUMENTS_PATH, InputArgument::REQUIRED)
+            ->addArgument(self::ARGUMENTS_NAMESPACE, InputArgument::REQUIRED)
+            ->addOption(self::OPTIONS_HAS_ONE, null, InputOption::VALUE_NONE)
+            ->addOption(self::OPTIONS_HAS_MANY, null, InputOption::VALUE_NONE)
+            ->addOption(self::OPTIONS_MANY_MANY, null, InputOption::VALUE_NONE);
     }
 
     /**
@@ -85,8 +79,8 @@ class CreateModuleCommand extends Command
     {
         $this->setArguments($input);
         $output->writeln(
-            "Creating SilverStripe module named {$this->moduleName} "
-            . "at {$this->getModulePath()}"
+            "Creating SilverStripe DataObject named {$this->name} "
+            . "at {$this->modulePath}"
         );
         $this->copySkeleton();
         $output->writeln(' - Skeleton copied');
@@ -104,11 +98,12 @@ class CreateModuleCommand extends Command
      */
     protected function setArguments(InputInterface $input)
     {
-        $this->moduleName = $input->getArgument(self::ARGUMENTS_MODULE_NAME);
-        $this->namespace = $input->getArgument(self::ARGUMENTS_MODULE_NAMESPACE);
+        $this->name = $input->getArgument(self::ARGUMENTS_NAME);
+        $this->namespace = $input->getArgument(self::ARGUMENTS_NAMESPACE);
+        $this->modulePath = $input->getArgument(self::ARGUMENTS_PATH);
 
-        ValidationHelper::validateModuleName($this->moduleName);
         ValidationHelper::validateNamespace($this->namespace);
+        ValidationHelper::validateModuleName($this->moduleName);
     }
 
     /**
@@ -123,7 +118,7 @@ class CreateModuleCommand extends Command
         $uri = function ($folder, $endPoint) {
             return "{$folder}{$this->separator}{$endPoint}";
         };
-        if ($input->getOption(self::OPTIONS_NON_VENDOR)) {
+        if ($input->getOption(self::OPTIONS_HAS_ONE)) {
             $this->moduleType = 'silverstripe-module';
         }
 
@@ -131,7 +126,7 @@ class CreateModuleCommand extends Command
             $this->frameworkVersion = 'ss3';
         }
 
-        if ($withTravis = $input->getOption(self::OPTIONS_TRAVIS_CI)) {
+        if ($withTravis = $input->getOption(self::OPTIONS_HAS_MANY)) {
             $file = '.travis.yml';
             $this->getFilesystem()->copy(
                 $uri($source, $file),
@@ -139,7 +134,7 @@ class CreateModuleCommand extends Command
             );
         }
 
-        if ($withCircleCI = $input->getOption(self::OPTIONS_CIRCLE_CI)) {
+        if ($withCircleCI = $input->getOption(self::OPTIONS_MANY_MANY)) {
             $folder = '.circleci';
             $this->getFilesystem()->mirror(
                 $uri($source, $folder),
@@ -164,44 +159,28 @@ class CreateModuleCommand extends Command
      */
     protected function setupComposerJson()
     {
+        $path = $this->getTargetPath() . DIRECTORY_SEPARATOR . 'composer.json';
+        $contents = file_get_contents($path);
         $search = [
             '$moduleName',
             '$moduleType',
             '$namespace'
         ];
         $replace = [
-            $this->moduleName,
+            $this->name,
             $this->moduleType,
             $this->namespace
         ];
 
-        $contents = str_ireplace($search, $replace, $this->getComposerFileContents());
-        $this->getFilesystem()->dumpFile($this->getComposerFilePath(), $contents);
-    }
-
-    /**
-     * Returns the path to the composer file
-     * @return string
-     */
-    public function getComposerFilePath()
-    {
-        return $this->getTargetPath() . DIRECTORY_SEPARATOR . 'composer.json';
-    }
-
-    /**
-     * Returns the content of the composer file
-     * @return bool|string
-     */
-    public function getComposerFileContents()
-    {
-        return file_get_contents($this->getComposerFilePath());
+        $contents = str_ireplace($search, $replace, $contents);
+        $this->getFilesystem()->dumpFile($path, $contents);
     }
 
     /**
      * Gets or sets the file system property
      * @return Filesystem
      */
-    public function getFilesystem()
+    protected function getFilesystem()
     {
         if (!$this->fileSystem) {
             $this->fileSystem = new Filesystem();
@@ -215,7 +194,7 @@ class CreateModuleCommand extends Command
      * @param string $subDir
      * @return string
      */
-    public function getSourcePath($subDir = 'assets')
+    protected function getSourcePath($subDir = 'assets')
     {
         $porterDir = __DIR__;
         return "{$porterDir}{$this->separator}{$subDir}{$this->separator}{$this->frameworkVersion}-skeleton";
@@ -225,31 +204,9 @@ class CreateModuleCommand extends Command
      * Gets destination path for the module skeleton
      * @return string
      */
-    public function getTargetPath()
+    protected function getTargetPath()
     {
-        $folderName = substr($this->moduleName, stripos($this->moduleName, DIRECTORY_SEPARATOR) + 1);
-        return $this->getModulePath() . $this->separator . $folderName;
-    }
-
-    /**
-     * Returns the module path. Defaults to use getcwd();
-     * @return string
-     */
-    public function getModulePath()
-    {
-        if (!$this->modulePath) {
-            $this->modulePath = getcwd();
-        }
-        return $this->modulePath;
-    }
-
-    /**
-     * @param string $modulePath
-     * @return CreateModuleCommand
-     */
-    public function setModulePath($modulePath)
-    {
-        $this->modulePath = $modulePath;
-        return $this;
+        $folderName = substr($this->name, stripos($this->name, DIRECTORY_SEPARATOR) + 1);
+        return $this->modulePath . $this->separator . $folderName;
     }
 }
