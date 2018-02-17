@@ -88,41 +88,22 @@ class CreateModuleCommand extends Command
             "Creating SilverStripe module named {$this->moduleName} "
             . "at {$this->getModulePath()}"
         );
+        $this->preCopyOptions($input);
         $this->copySkeleton();
         $output->writeln(' - Skeleton copied');
         $this->setupComposerJson();
         $output->writeln(' - composer.json updated');
-        $this->copyOptions($input);
+        $this->postCopyOptions($input);
         $output->writeln(' - Options copied');
         $output->writeln(' - Done');
     }
 
     /**
-     * Sets the argument values to their respective properties
+     * Applies any pre copy options
      * @param InputInterface $input
-     * @throws RuntimeException
      */
-    protected function setArguments(InputInterface $input)
+    protected function preCopyOptions(InputInterface $input)
     {
-        $this->moduleName = $input->getArgument(self::ARGUMENTS_MODULE_NAME);
-        $this->namespace = $input->getArgument(self::ARGUMENTS_MODULE_NAMESPACE);
-
-        ValidationHelper::validateNamespace($this->namespace);
-        ValidationHelper::validateModuleName($this->moduleName);
-    }
-
-    /**
-     * Checks for and actions all actions
-     * @param InputInterface $input
-     * @param OutputInterface $output
-     */
-    protected function copyOptions(InputInterface $input)
-    {
-        $source = $this->getSourcePath('options');
-        $target = $this->getTargetPath();
-        $uri = function ($folder, $endPoint) {
-            return "{$folder}{$this->separator}{$endPoint}";
-        };
         if ($input->getOption(self::OPTIONS_NON_VENDOR)) {
             $this->moduleType = 'silverstripe-module';
         }
@@ -130,6 +111,19 @@ class CreateModuleCommand extends Command
         if ($ss3 = $input->getOption(self::OPTIONS_SS3)) {
             $this->frameworkVersion = 'ss3';
         }
+    }
+
+    /**
+     * Applies any post copy options
+     * @param InputInterface $input
+     */
+    protected function postCopyOptions(InputInterface $input)
+    {
+        $source = $this->getSourcePath('options');
+        $target = $this->getTargetPath();
+        $uri = function ($folder, $endPoint) {
+            return "{$folder}{$this->separator}{$endPoint}";
+        };
 
         if ($withTravis = $input->getOption(self::OPTIONS_TRAVIS_CI)) {
             $file = '.travis.yml';
@@ -149,6 +143,20 @@ class CreateModuleCommand extends Command
     }
 
     /**
+     * Sets the argument values to their respective properties
+     * @param InputInterface $input
+     * @throws RuntimeException
+     */
+    protected function setArguments(InputInterface $input)
+    {
+        $this->moduleName = $input->getArgument(self::ARGUMENTS_MODULE_NAME);
+        $this->namespace = $input->getArgument(self::ARGUMENTS_MODULE_NAMESPACE);
+
+        ValidationHelper::validateModuleName($this->moduleName);
+        ValidationHelper::validateNamespace($this->namespace);
+    }
+
+    /**
      * Copies the skeleton to the root directory
      */
     protected function copySkeleton()
@@ -164,8 +172,6 @@ class CreateModuleCommand extends Command
      */
     protected function setupComposerJson()
     {
-        $path = $this->getTargetPath() . DIRECTORY_SEPARATOR . 'composer.json';
-        $contents = file_get_contents($path);
         $search = [
             '$moduleName',
             '$moduleType',
@@ -177,15 +183,33 @@ class CreateModuleCommand extends Command
             $this->namespace
         ];
 
-        $contents = str_ireplace($search, $replace, $contents);
-        $this->getFilesystem()->dumpFile($path, $contents);
+        $contents = str_ireplace($search, $replace, $this->getComposerFileContents());
+        $this->getFilesystem()->dumpFile($this->getComposerFilePath(), $contents);
+    }
+
+    /**
+     * Returns the path to the composer file
+     * @return string
+     */
+    public function getComposerFilePath()
+    {
+        return $this->getTargetPath() . DIRECTORY_SEPARATOR . 'composer.json';
+    }
+
+    /**
+     * Returns the content of the composer file
+     * @return bool|string
+     */
+    public function getComposerFileContents()
+    {
+        return file_get_contents($this->getComposerFilePath());
     }
 
     /**
      * Gets or sets the file system property
      * @return Filesystem
      */
-    protected function getFilesystem()
+    public function getFilesystem()
     {
         if (!$this->fileSystem) {
             $this->fileSystem = new Filesystem();
@@ -199,7 +223,7 @@ class CreateModuleCommand extends Command
      * @param string $subDir
      * @return string
      */
-    protected function getSourcePath($subDir = 'assets')
+    public function getSourcePath($subDir = 'assets')
     {
         $porterDir = __DIR__;
         return "{$porterDir}{$this->separator}{$subDir}{$this->separator}{$this->frameworkVersion}-skeleton";
@@ -209,7 +233,7 @@ class CreateModuleCommand extends Command
      * Gets destination path for the module skeleton
      * @return string
      */
-    protected function getTargetPath()
+    public function getTargetPath()
     {
         $folderName = substr($this->moduleName, stripos($this->moduleName, DIRECTORY_SEPARATOR) + 1);
         return $this->getModulePath() . $this->separator . $folderName;
