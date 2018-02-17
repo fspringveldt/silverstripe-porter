@@ -88,6 +88,102 @@ class CreateModuleCommandTest extends TestCase
         $this->deleteDirectory($this->command->getTargetPath());
     }
 
+    public function testCopySkeleton()
+    {
+        $tester = new CommandTester($this->command);
+        $input = [
+            'module-name' => 'foo/bar',
+            'module-namespace' => 'Foo\\\\bar',
+            '--withCircleCI' => true
+        ];
+        $tester->execute($input);
+
+        $targetPath = $this->command->getTargetPath();
+        $sourceComposer = file_get_contents(
+            $this->command->getSourcePath() .
+            DIRECTORY_SEPARATOR . 'composer.json'
+        );
+        $this->assertTrue(is_dir($targetPath));
+        $this->assertTrue(
+            is_dir(
+                $targetPath . DIRECTORY_SEPARATOR . '.circleci'
+            )
+        );
+        $this->assertNotEquals(
+            $sourceComposer,
+            $this->command->getComposerFileContents()
+        );
+        $this->deleteDirectory($this->command->getTargetPath());
+    }
+
+    public function testPreCopyOptions()
+    {
+        $tester = new CommandTester($this->command);
+        $input = [
+            'module-name' => 'foo/bar',
+            'module-namespace' => 'Foo\\\\Bar',
+        ];
+        $tester->execute($input);
+        $this->assertContains(
+            'silverstripe-vendormodule',
+            $this->command->getComposerFileContents()
+        );
+        $this->deleteDirectory($this->command->getTargetPath());
+
+        $input['--nonVendor'] = true;
+        $tester->execute($input);
+        $this->assertContains(
+            'silverstripe-module',
+            $this->command->getComposerFileContents()
+        );
+        $this->deleteDirectory($this->command->getTargetPath());
+        $input['--ss3'] = true;
+        $tester->execute($input);
+        $this->assertContains(
+            '3.6',
+            $this->command->getComposerFileContents()
+        );
+        $this->assertFileExists(
+            $this->command->getTargetPath() .
+            DIRECTORY_SEPARATOR . '_config.php'
+        );
+        $this->deleteDirectory($this->command->getTargetPath());
+    }
+
+    public function testPostCopyOptions()
+    {
+        $tester = new CommandTester($this->command);
+        $input = [
+            'module-name' => 'foo/bar',
+            'module-namespace' => 'Foo\\\\Bar',
+        ];
+        $tester->execute($input);
+        $this->assertFileNotExists(
+            $this->command->getTargetPath() .
+            DIRECTORY_SEPARATOR . '.travis.yml'
+        );
+        $this->assertDirectoryNotExists(
+            $this->command->getTargetPath() .
+            DIRECTORY_SEPARATOR . '.circleci'
+        );
+        $this->deleteDirectory($this->command->getTargetPath());
+
+        $input['--withTravisCI'] = true;
+        $tester->execute($input);
+        $this->assertFileExists(
+            $this->command->getTargetPath() .
+            DIRECTORY_SEPARATOR . '.travis.yml'
+        );
+        $this->deleteDirectory($this->command->getTargetPath());
+        $input['--withCircleCI'] = true;
+        $tester->execute($input);
+        $this->assertDirectoryExists(
+            $this->command->getTargetPath() .
+            DIRECTORY_SEPARATOR . '.circleci'
+        );
+        $this->deleteDirectory($this->command->getTargetPath());
+    }
+
     /**
      * Recursively deletes a directory
      * @param $dir
@@ -95,25 +191,6 @@ class CreateModuleCommandTest extends TestCase
      */
     private function deleteDirectory($dir)
     {
-        if (!file_exists($dir)) {
-            return true;
-        }
-
-        if (!is_dir($dir)) {
-            return unlink($dir);
-        }
-
-        foreach (scandir($dir) as $item) {
-            if ($item == '.' || $item == '..') {
-                continue;
-            }
-
-            if (!$this->deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) {
-                return false;
-            }
-
-        }
-
-        return rmdir($dir);
+        $this->command->getFilesystem()->remove($this->command->getTargetPath());
     }
 }
