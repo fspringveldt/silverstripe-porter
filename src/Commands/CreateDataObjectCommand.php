@@ -136,7 +136,7 @@ class CreateDataObjectCommand extends Command
             return "{$folder}{$this->separator}{$endPoint}";
         };
         if ($input->getOption(self::OPTIONS_HAS_ONE)) {
-            $this->moduleType = 'silverstripe-module';
+//            $this->moduleType = 'silverstripe-module';
         }
 
         if ($ss3 = $input->getOption(self::OPTIONS_SS3)) {
@@ -180,12 +180,10 @@ class CreateDataObjectCommand extends Command
         $contents = file_get_contents($path);
         $search = [
             '$moduleName',
-            '$moduleType',
             '$namespace'
         ];
         $replace = [
             $this->name,
-            $this->moduleType,
             $this->namespace
         ];
 
