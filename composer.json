@@ -21,6 +21,11 @@
       "SilverStripe\\Porter\\Tests\\": "tests/PHP"
     }
   },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "2.0.x-dev"
+    }
+  },
   "require": {
     "symfony/console": "^3.0",
     "symfony/filesystem": "^3.0",
